@@ -1,7 +1,7 @@
 %option noyywrap
 %{
+//Add +/-/*
 #include "y.tab.h"
-#include "token.h"
 %}
 %%
 \( {
@@ -100,6 +100,11 @@ is {
 \. {
         printf("Dot \n");
         return DOT;
+}
+
+"\n" {
+	printf("LINE BREAK \n");
+	return END;
 }
 
 .* {
