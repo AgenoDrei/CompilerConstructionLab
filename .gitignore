@@ -2,3 +2,5 @@ lex.yy.c
 *~
 *.swp
 y.tab.*
+*.out*
+cc1ab

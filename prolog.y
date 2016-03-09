@@ -22,7 +22,7 @@ int error = -1;
 %token EQUAL
 %token UNEQUAL
 %token GREATER_EQUAL
-%token SMALER_EQUAL
+%token SMALLER_EQUAL
 %token SMALLER
 %token GREATER
 %token NAME
