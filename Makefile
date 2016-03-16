@@ -5,7 +5,7 @@
 
 LEX = flex
 # = bison -d
-YACC = bison -d -b y
+YACC = bison -d -b y -Wall
 
 # We assume that your C-compiler is called cc
 

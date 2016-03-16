@@ -52,7 +52,7 @@ is {
         return GREATER_EQUAL;
 }
 
-\<= {
+=< {
         printf("SMALLER EQUAL \n");
         return SMALLER_EQUAL;
 }
@@ -103,10 +103,12 @@ is {
         return DOT;
 }
 
-"\n" {
-	printf("LINE BREAK AKA END \n");
+<<EOF>> {
+	printf("END \n");
 	return END;
 }
+
+"\n" ;
 
 [ ]+ ;
 
