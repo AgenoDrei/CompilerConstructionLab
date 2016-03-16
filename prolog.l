@@ -31,7 +31,7 @@ is {
         return NUMBER;
 }
 
-([1-9][0-9]*|0)\.[0-9]*|0 {
+([1-9][0-9]*|0)\.[0-9]+|0 {
 	printf("float number\n");
         yylval.reell=atof(yytext);
         return NUMBER;
