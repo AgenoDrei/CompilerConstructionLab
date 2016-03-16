@@ -12,6 +12,7 @@ int error = -1;
 	float reell;
 	int integer;
 }
+
 %token END
 %token OPEN_BRACKET
 %token CLOSE_BRACKET
@@ -31,19 +32,25 @@ int error = -1;
 %token COMMA
 %token PIPE 
 %token DOT
-%token UNKNOWN
 %token NUMBER
 
 %type <float> NUMBER
 
 %%
 
-S : 
-| S EXPRESSION;
+S : HEAD DOT END
+| HEAD RULE_OPERATOR TAIL END;
 
-EXPRESSION : END;
+HEAD : NAME OPEN_BRACKET PARAMETER_LIST CLOSE_BRACKET;
 
+PARAMETER_LIST : PARAMETER
+| PARAMETER COMMA PARAMETER_LIST;
 
+PARAMETER: NAME
+| VARIABLE
+| NUMBER;
+
+TAIL : DOT;
 
 %%
 

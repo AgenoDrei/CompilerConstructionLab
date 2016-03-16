@@ -4,6 +4,7 @@
 #include "y.tab.h"
 %}
 %%
+
 \( {
 	printf("Open Bracket \n");
 	return OPEN_BRACKET;
@@ -24,7 +25,7 @@ is {
         return IS;
 }
 
-([1-9][0-9]*|0) {
+([1-9][0-9]*)|0 {
 	printf("integer number\n");
         yylval.integer=atof(yytext);
         return NUMBER;
@@ -103,13 +104,12 @@ is {
 }
 
 "\n" {
-	printf("LINE BREAK \n");
+	printf("LINE BREAK AKA END \n");
 	return END;
 }
 
-.* {
-	printf("UNKOWN SEQUENCE \n");
-	return UNKNOWN;
-}
+[ ]+ ;
+
+. printf("what?\n");
 
 %%
