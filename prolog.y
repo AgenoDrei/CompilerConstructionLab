@@ -3,9 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-void yyerror(char *message);
+
+void yyerror(const char *message);
 int error = -1;
+FILE* yyin;
+int yylineno;
 %}
+
+%error-verbose
 
 %start S
 
@@ -16,7 +21,7 @@ int error = -1;
 	char* name;
 }
  
-%token END
+%token END 0 
 %token OPEN_BRACKET
 %token CLOSE_BRACKET
 %token CLOSE_SQUARE_BRACKET
@@ -119,11 +124,15 @@ LIST_TAIL : PARAMETER;
 %%
 
 int main(int argc, char **argv){
-	yyparse();
+	if(argc == 1) {
+		yyparse();
+	} else {
+		yyin = fopen(argv[1], "r");
+		yyparse();
+	}
 	return 0;
 }
 
-void yyerror(char *message) {
-	printf("ERROR: ");
-	printf("%s\n", message);
+void yyerror(const char *message) {
+	printf("%d: %s \n", yylineno, message);
 }
