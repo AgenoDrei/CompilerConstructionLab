@@ -5,7 +5,7 @@
 
 LEX = flex
 # = bison -d
-YACC = bison -d -b y -Wall
+YACC = bison -d -b y
 
 # We assume that your C-compiler is called cc
 
@@ -41,4 +41,4 @@ lex.yy.c: prolog.l
 ## from scratch
 
 clean:
-	-rm -f *.o lex.yy.c *.tab.*  cc1ab *.output
+	-rm -f *.o lex.yy.c *.tab.* cc1ab *.output

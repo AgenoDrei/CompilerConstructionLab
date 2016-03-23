@@ -12,7 +12,7 @@ int error = -1;
 	float reell;
 	int integer;
 }
-
+ 
 %token END
 %token OPEN_BRACKET
 %token CLOSE_BRACKET
@@ -35,6 +35,14 @@ int error = -1;
 %token NUMBER
 
 %type <float> NUMBER
+
+%left GREATER
+%left SMALLER
+%left GREATER_EQUAL
+%left SMALLER_EQUAL
+%left EQUAL
+%left UNEQUAL
+%left IS
 
 %%
 

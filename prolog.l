@@ -1,5 +1,8 @@
 %option noyywrap
 %{
+
+unsigned int line = 1;
+
 //TODO: Add +/-/*
 #include "y.tab.h"
 %}
@@ -108,10 +111,19 @@ is {
 	return END;
 }
 
-"\n" ;
+"\n" {
+	printf("line: %i \n", line);
+	line++;
+}
+
+"\r\n" {
+	printf("line: %i \n", line);
+	line++;
+}
+"\t" ;
 
 [ ]+ ;
 
-. printf("what?\n");
+. printf("what? %d\n", (int)*yytext);
 
 %%
