@@ -4,6 +4,8 @@
 #include <stdlib.h>
 void yyerror(char *message);
 int error = -1;
+FILE* yyin;
+
 %}
 
 %start S
@@ -114,7 +116,12 @@ LIST_TAIL : PARAMETER;
 %%
 
 int main(int argc, char **argv){
-	yyparse();
+	if(argc == 1) {
+		yyparse();
+	} else {
+		yyin = fopen(argv[1], "r");
+		yyparse();
+	}
 	return 0;
 }
 
