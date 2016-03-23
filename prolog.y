@@ -2,11 +2,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-void yyerror(char *message);
+void yyerror(const char *message);
 int error = -1;
 FILE* yyin;
-
+int yylineno;
 %}
+
+%error-verbose
 
 %start S
 
@@ -15,7 +17,7 @@ FILE* yyin;
 	int integer;
 }
  
-%token END
+%token END 0 
 %token OPEN_BRACKET
 %token CLOSE_BRACKET
 %token CLOSE_SQUARE_BRACKET
@@ -125,7 +127,6 @@ int main(int argc, char **argv){
 	return 0;
 }
 
-void yyerror(char *message) {
-	printf("ERROR: ");
-	printf("%s\n", message);
+void yyerror(const char *message) {
+	printf("%d: %s \n", yylineno, message);
 }

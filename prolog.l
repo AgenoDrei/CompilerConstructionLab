@@ -1,4 +1,5 @@
 %option noyywrap
+%option yylineno
 %{
 
 unsigned int line = 1;
@@ -122,7 +123,7 @@ is {
 }
 
 <<EOF>> {
-	printf("END \n");
+	yyterminate();
 	return END;
 }
 
