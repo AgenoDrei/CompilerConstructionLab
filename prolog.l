@@ -23,6 +23,21 @@ unsigned int line = 1;
         return RULE_OPERATOR;
 }
 
+\* {
+        printf("Multiplication \n");
+        return TIMES;	
+}
+
+\+ {
+	printf("Plus \n");
+        return PLUS;   
+}
+
+- {
+	printf("Minus \n");
+        return MINUS;   
+}
+
 is {
         printf("IS \n");
         return IS;
@@ -72,12 +87,12 @@ is {
 
 
 [a-z]+ {
-        printf("name \n");
+        printf("name: %s \n", yytext);
         return NAME;
 }
 
-[A-Z]+ {
-        printf("variable \n");
+[A-Z][A-Z0-9]* {
+        printf("variable: %s \n", yytext);
         return VARIABLE;
 }
 
