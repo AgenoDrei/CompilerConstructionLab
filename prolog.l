@@ -87,13 +87,15 @@ is {
 
 
 [a-z]+ {
-        printf("name: %s \n", yytext);
+        //printf("name: %s \n", yytext);
+	yylval.name= strdup(yytext);
         return NAME;
 }
 
 [A-Z][A-Z0-9]* {
-        printf("variable: %s \n", yytext);
-        return VARIABLE;
+        //printf("variable: %s \n", yytext);
+        yylval.variable = strdup(yytext);
+	return VARIABLE;
 }
 
 \[ {

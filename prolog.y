@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 void yyerror(char *message);
 int error = -1;
 %}
@@ -11,6 +12,8 @@ int error = -1;
 %union {
 	float reell;
 	int integer;
+	char* variable;
+	char* name;
 }
  
 %token END
@@ -38,6 +41,8 @@ int error = -1;
 %token NUMBER
 
 %type <float> NUMBER
+%type <variable> VARIABLE 
+%type <name> NAME
 
 %left MINUS
 %left PLUS
@@ -62,13 +67,13 @@ RULE: RULE_OPERATOR TAIL;
 
 HEAD : FACT;
 
-FACT : NAME OPEN_BRACKET PARAMETER_LIST CLOSE_BRACKET;
+FACT : NAME OPEN_BRACKET PARAMETER_LIST CLOSE_BRACKET {printf("Name: %s\n", $1);};
 
 PARAMETER_LIST : PARAMETER
 | PARAMETER COMMA PARAMETER_LIST;
 
-PARAMETER: NAME
-| VARIABLE
+PARAMETER: NAME {printf("Name: %s\n", $1);} 
+| VARIABLE {printf("Variable: %s\n", $1);} 
 | NUMBER
 | LIST;
 
