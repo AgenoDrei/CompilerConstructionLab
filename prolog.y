@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
+#include <iostream>
 #include "inc/Problem.h"
 
 void yyerror(const char *message);
@@ -10,6 +12,9 @@ int yylex(void);
 int error = -1;
 extern FILE* yyin;
 extern int yylineno;
+
+Problem* currentProblem = new Problem();
+
 %}
 
 %error-verbose
@@ -65,14 +70,16 @@ extern int yylineno;
 %%
 
 S : HEAD AFTER_HEAD
-| END;
+| END {if(currentProblem) { delete currentProblem; }};
 
-AFTER_HEAD: DOT S
-| RULE DOT S
+AFTER_HEAD: RULE_FINISHED S
+| RULE RULE_FINISHED S;
+
+RULE_FINISHED: DOT { delete currentProblem; currentProblem = new Problem();}
 
 RULE: RULE_OPERATOR TAIL;
 
-HEAD : FACT;
+HEAD : FACT { currentProblem->setHeadCompleted();};
 
 FACT : NAME OPEN_BRACKET PARAMETER_LIST CLOSE_BRACKET {printf("Name: %s\n", $1);};
 
@@ -125,12 +132,17 @@ LIST_TAIL : PARAMETER;
 
 %%
 
-int main(int argc, char **argv){
-	if(argc == 1) {
-		yyparse();
-	} else {
-		yyin = fopen(argv[1], "r");
-		yyparse();
+int main(int argc, char **argv) {
+	try {
+		if(argc == 1) {
+			yyparse();
+		} else {
+			yyin = fopen(argv[1], "r");
+			yyparse();
+		}
+	} catch(std::string message) {
+		std::cerr<<message<<std::endl;
+		return -1;
 	}
 	return 0;
 }
