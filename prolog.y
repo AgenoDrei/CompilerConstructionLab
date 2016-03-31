@@ -3,11 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "inc/Problem.h"
 
 void yyerror(const char *message);
+int yylex(void);
 int error = -1;
-FILE* yyin;
-int yylineno;
+extern FILE* yyin;
+extern int yylineno;
 %}
 
 %error-verbose
