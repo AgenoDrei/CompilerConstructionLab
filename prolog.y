@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include "inc/Problem.h"
+#include "inc/SubProblem.h"
 
 void yyerror(const char *message);
 int yylex(void);
@@ -81,13 +82,22 @@ RULE: RULE_OPERATOR TAIL;
 
 HEAD : FACT { currentProblem->setHeadCompleted();};
 
-FACT : NAME OPEN_BRACKET PARAMETER_LIST CLOSE_BRACKET {printf("Name: %s\n", $1);};
+FACT : NAME OPEN_BRACKET PARAMETER_LIST CLOSE_BRACKET {
+     printf("Name: %s\n", $1);
+};
 
 PARAMETER_LIST : PARAMETER
 | PARAMETER COMMA PARAMETER_LIST;
 
 PARAMETER: NAME {printf("Name: %s\n", $1);} 
-| VARIABLE {printf("Variable: %s\n", $1);} 
+| VARIABLE {
+	printf("Variable: %s\n", $1);
+	if(currentProblem->getHeadCompleted()) {
+		currentProblem->getCurrentSubProblem()->addVariable($1);
+	} else {
+		currentProblem->addVariable($1);
+	}
+} 
 | NUMBER
 | LIST;
 
@@ -99,9 +109,14 @@ PARAMETER: NAME {printf("Name: %s\n", $1);}
 
 TAIL : CHAIN; // a(X,Y), b(X,Z)
 
-CHAIN : FACT
+START_FACT : %empty {
+	printf("Create Subproblem\n");
+	currentProblem->newSubProblem();
+};
+
+CHAIN : START_FACT FACT
 | EXPRESSION
-| FACT COMMA CHAIN
+| START_FACT FACT COMMA CHAIN
 | EXPRESSION COMMA CHAIN;
 
 EXPRESSION : NUMBER

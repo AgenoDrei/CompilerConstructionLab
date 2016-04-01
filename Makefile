@@ -9,13 +9,13 @@ YACC = bison -d -b y
 
 # We assume that your C-compiler is called cc
 
-CC = g++ -std=c++11
+CC = g++ -Wall -std=c++11
 
 # calc is the final object that we will generate, it is produced by
 # the C compiler from the y.tab.o and from the lex.yy.o
 
 cc1ab: y.tab.c lex.yy.c
-		$(CC) y.tab.c lex.yy.c Problem.cpp -lfl -lm -o cc1ab
+		$(CC) y.tab.c lex.yy.c Problem.cpp BaseProblem.cpp -lfl -lm -o cc1ab
 
 # These dependency rules indicate that (1) lex.yy.o depends on
 # lex.yy.c and y.tab.h and (2) lex.yy.o and y.tab.o depend on calc.h.

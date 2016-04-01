@@ -1,4 +1,5 @@
 #include "inc/Problem.h"
+#include "inc/SubProblem.h"
 
 #include <string>
 #include <iostream>
@@ -22,5 +23,14 @@ void Problem::setHeadCompleted() {
 
 bool Problem::getHeadCompleted() {
 	return _headCompleted;
+}
+
+SubProblem* Problem::newSubProblem() {
+	_subProblems.push_back(unique_ptr<SubProblem>(new SubProblem()));
+	return getCurrentSubProblem();
+}
+
+SubProblem* Problem::getCurrentSubProblem() {
+	return _subProblems.back().get();
 }
 

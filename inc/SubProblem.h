@@ -1,11 +1,11 @@
 #pragma once
 
-#include <set>
-#include <string>
+#include "BaseProblem.h"
 
-class SubProblem {
+class SubProblem : public BaseProblem {
 private:
-	std::set<std::string> _variables;
-	std::set<std::string> _helperVariables;
+	std::list<std::string> _helperVariables;
+
+public:
 };
 
