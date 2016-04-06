@@ -5,6 +5,9 @@
 #include <string.h>
 #include <string>
 #include <iostream>
+#include <algorithm>
+#include <map>
+#include "inc/Node.h"
 #include "inc/Problem.h"
 #include "inc/SubProblem.h"
 
@@ -15,6 +18,84 @@ extern FILE* yyin;
 extern int yylineno;
 
 Problem* currentProblem = new Problem();
+
+std::string getNodeTypeString(NodeType type) {
+	switch(type) {
+		case ENTRY:
+			return "E";
+		case UPDATE:
+			return "U";
+		case COPY:
+			return "C";
+		default:
+			return "WHAT THE FUCK!!!";
+	}
+}
+
+void createTree() {
+	Node* entry = new Node(ENTRY);
+
+	std::map<int, Node*> nodes; // TODO: use smart pointer
+	nodes.insert(std::pair<int, Node*>(entry->getID(), entry));
+
+
+	int numSubProblem = 0;
+	Node* firstSubProblemUpdate = nullptr;
+
+	for(auto i = currentProblem->getSubProblemStart(); i != currentProblem->getSubProblemEnd(); ++i) {
+		Node* updateSubProblem = new Node(UPDATE);
+		nodes.insert(std::pair<int, Node*>(updateSubProblem->getID(), updateSubProblem));
+                // TODO: updateSubProblem.input.right = subProblem
+
+                if(numSubProblem == 0) {
+			firstSubProblemUpdate = updateSubProblem;
+
+                        entry->outputs[1] = updateSubProblem->getID();
+                        updateSubProblem->inputs.left = entry->getID();
+                } else if(numSubProblem == 1) {
+			Node* copy = new Node(COPY);
+			nodes.insert(std::pair<int, Node*>(copy->getID(), copy));
+
+			copy->inputs.left = entry->getID();
+			entry->outputs[1] = copy->getID();
+			
+			updateSubProblem->inputs.left = copy->getID();
+			copy->outputs[0] = updateSubProblem->getID();
+
+			firstSubProblemUpdate->inputs.left = copy->getID();
+			copy->outputs[1] = firstSubProblemUpdate->getID();
+		} else {
+			// TODO: MORE SUB PROBLEMS e.g better copy output handling
+		}
+
+                numSubProblem++;
+	}
+
+	std::cout<<"<Nr>\t"<<"<Typ>\t"<<"(<RNr> <RPort>)\t"<<"(<LNr> <LPort>)\t"<<"Info"<<std::endl;
+	for(auto& kv : nodes)  {
+		std::cout<<kv.first<<"\t"<<getNodeTypeString(kv.second->getType())<<"\t"<<"("<<kv.second->outputs[0]<<" ";
+		if(kv.second->outputs[0] != -1) {
+			if(nodes[kv.second->outputs[0]]->inputs.left == kv.first) {
+				std::cout<<"L";
+			} else {
+				std::cout<<"R";			
+			}
+		}else {
+			std::cout<<"-1";
+		}
+		std::cout<<")\t"<<"("<<kv.second->outputs[1]<<" ";
+		if(kv.second->outputs[1] != -1) {
+			if(nodes[kv.second->outputs[1]]->inputs.left == kv.first) {
+                                std::cout<<"L";
+                        } else {
+                                std::cout<<"R";
+                        }
+		} else {
+			std::cout<<"-1";
+		}
+		std::cout<<")\t"<<"Info"<<std::endl;
+	};
+}
 
 %}
 
@@ -76,7 +157,7 @@ S : HEAD AFTER_HEAD
 AFTER_HEAD: RULE_FINISHED S
 | RULE RULE_FINISHED S;
 
-RULE_FINISHED: DOT { delete currentProblem; currentProblem = new Problem();}
+RULE_FINISHED: DOT {createTree(); delete currentProblem; currentProblem = new Problem();}
 
 RULE: RULE_OPERATOR TAIL;
 

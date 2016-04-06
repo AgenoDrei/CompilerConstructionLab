@@ -19,5 +19,8 @@ public:
 
 	SubProblem* newSubProblem();
 	SubProblem* getCurrentSubProblem();
+
+	std::list<std::unique_ptr<SubProblem>>::const_iterator getSubProblemStart();
+	std::list<std::unique_ptr<SubProblem>>::const_iterator getSubProblemEnd();
 };
 

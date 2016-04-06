@@ -34,3 +34,11 @@ SubProblem* Problem::getCurrentSubProblem() {
 	return _subProblems.back().get();
 }
 
+std::list<std::unique_ptr<SubProblem>>::const_iterator Problem::getSubProblemStart() {
+	return _subProblems.begin();
+}
+
+std::list<std::unique_ptr<SubProblem>>::const_iterator Problem::getSubProblemEnd() {
+	return _subProblems.end();
+}
+
