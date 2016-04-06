@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <vector>
 #include <map>
 #include "inc/Node.h"
 #include "inc/Problem.h"
@@ -27,10 +28,64 @@ std::string getNodeTypeString(NodeType type) {
 			return "U";
 		case COPY:
 			return "C";
+		case GROUND:
+			return "G";
 		default:
 			return "WHAT THE FUCK!!!";
 	}
 }
+
+bool giIndependence(SubProblem* left, SubProblem* right) {
+	// TODO
+	return false;
+}
+
+bool giIndependence(std::list<SubProblem*> left, SubProblem* right) {
+	for(SubProblem* l : left) {
+		if(giIndependence(l, right)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool iIndependence(SubProblem* left, SubProblem* right) {
+        // TODO
+        return false;
+}
+
+bool iIndependence(std::list<SubProblem*> left, SubProblem* right) {
+        for(SubProblem* l : left) {
+                if(iIndependence(l, right)) {
+                        return true;
+                }
+        }
+        return false;
+}
+
+bool gIndependence(SubProblem* left, SubProblem* right) {
+	std::cerr<<"Doing gIndependence test!!! left:"<<left<<" right:"<<right<<std::endl;
+	std::vector<std::string> result(std::min(left->getVariableSize(), right->getVariableSize()));
+	set_intersection(left->getVariablesStart(), left->getVariablesEnd(), right->getVariablesStart(), right->getVariablesEnd(), result.begin());
+	if(!result.empty()) {
+		std::cerr<<"Found gIndependence"<<std::endl;
+		return true;
+	}
+	// TODO: Helper variables
+
+	std::cerr<<"Found gDependence"<<std::endl;
+        return false;
+}
+
+bool gIndependence(std::list<SubProblem*> left, SubProblem* right) {
+        for(SubProblem* l : left) {
+                if(gIndependence(l, right)) {
+                        return true;
+                }
+        }
+        return false;
+}
+
 
 void createTree() {
 	Node* entry = new Node(ENTRY);
@@ -38,6 +93,7 @@ void createTree() {
 	std::map<int, Node*> nodes; // TODO: use smart pointer
 	nodes.insert(std::pair<int, Node*>(entry->getID(), entry));
 
+	std::list<SubProblem*> visitedSubproblems;
 
 	int numSubProblem = 0;
 	Node* firstSubProblemUpdate = nullptr;
@@ -68,6 +124,19 @@ void createTree() {
 			// TODO: MORE SUB PROBLEMS e.g better copy output handling
 		}
 
+		if(giIndependence(visitedSubproblems, i->get())) {
+			// TODO
+		} else if(gIndependence(visitedSubproblems, i->get())) {
+			Node* g = new Node(GROUND);
+			nodes.insert(std::pair<int, Node*>(g->getID(), g));
+
+			g->inputs.left = updateSubProblem->getID();
+			updateSubProblem->outputs[0] = g->getID();
+		} else if(iIndependence(visitedSubproblems, i->get())) {
+			// TODO
+		}
+
+		visitedSubproblems.push_back(i->get());
                 numSubProblem++;
 	}
 

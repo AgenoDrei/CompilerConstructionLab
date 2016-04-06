@@ -11,5 +11,9 @@ protected:
 
 public:
 	void addVariable(std::string name);
+
+	std::list<std::string>::const_iterator getVariablesStart();
+	std::list<std::string>::const_iterator getVariablesEnd();
+	size_t getVariableSize();
 };
 
