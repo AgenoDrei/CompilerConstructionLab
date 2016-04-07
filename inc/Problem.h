@@ -10,9 +10,15 @@ class Problem : public BaseProblem {
 private:
 	std::list<std::unique_ptr<SubProblem>> _subProblems;
 	bool _headCompleted; // true after :-
+
+	std::string _name;
 public:
 	Problem();
 	~Problem();
+
+	void setName(std::string s);
+	void appendName(std::string s);
+	std::string getName();
 
 	void setHeadCompleted();
 	bool getHeadCompleted();

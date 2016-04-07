@@ -94,6 +94,7 @@ void createTree() {
 	NodeStorage storage;
 
 	auto entry = CreateAndRegisterNode<EntryNode>(storage);
+	entry->setRightInput(new StringNode(currentProblem->getName()));
 
 	std::list<SubProblem*> visitedSubproblems;
 
@@ -102,7 +103,7 @@ void createTree() {
 	CopyNode* mainCopyNode = nullptr;
 	UpdateNode* lastOutputCopyTokenUpdateNode = nullptr;
 
-	for(auto i = currentProblem->getSubProblemStart(); i != currentProblem->getSubProblemEnd(); ++i) {
+	for(auto q = currentProblem->getSubProblemStart(); q != currentProblem->getSubProblemEnd(); ++q) {
 		auto updateSubProblem = CreateAndRegisterNode<UpdateNode>(storage);
                 // TODO: updateSubProblem.input.right = subProblem
 
@@ -138,35 +139,42 @@ void createTree() {
 			break;
 		}
 
+		//------------ 2.2
 		BaseNode* lastDependenceNode = updateSubProblem; // if there is no dependence the next node is the last U-Node
 		
-		if(giIndependence(visitedSubproblems, i->get())) {
+		if(giIndependence(visitedSubproblems, q->get())) {
 			// TODO
-		} else if(gIndependence(visitedSubproblems, i->get())) {
+		} else if(gIndependence(visitedSubproblems, q->get())) {
 			auto g = CreateAndRegisterNode<GroundNode>(storage);
 
 			g->setLeftInput(updateSubProblem);
 			updateSubProblem->setOutput(g);
 
 			lastDependenceNode = g;
-		} else if(iIndependence(visitedSubproblems, i->get())) {
-			auto iNode = CreateAndRegisterNode<IndependenceNode>(storage);
+		} else if(iIndependence(visitedSubproblems, q->get())) {
+			auto i = CreateAndRegisterNode<IndependenceNode>(storage);
 
-			iNode->setLeftInput(updateSubProblem);
-			updateSubProblem->setOutput(iNode);
+			i->setLeftInput(updateSubProblem);
+			updateSubProblem->setOutput(i);
 
-			lastDependenceNode = iNode;
+			lastDependenceNode = i;
 		}
+
+		//---------2.3
 
 		auto apply = CreateAndRegisterNode<ApplyNode>(storage);
 
 		apply->setInput(lastDependenceNode);
 		dynamic_cast<ILeftOutputNode*>(lastDependenceNode)->setLeftOutput(apply);
 
+		//--------2.4
+
 		auto copyOutputToken = CreateAndRegisterNode<CopyNode>(storage);
 
 		copyOutputToken->setInput(apply);
 		apply->setOutput(copyOutputToken);
+
+		//-------2.5
 
 		auto outputCopyTokenUpdate = CreateAndRegisterNode<UpdateNode>(storage);
 		
@@ -177,13 +185,13 @@ void createTree() {
 			outputCopyTokenUpdate->setRightInput(entry);
 			entry->setLeftOutput(outputCopyTokenUpdate);
 		} else {
-			lastOutputCopyTokenUpdateNode->setRightInput(outputCopyTokenUpdate);
-			outputCopyTokenUpdate->setLeftOutput(lastOutputCopyTokenUpdateNode);
+			outputCopyTokenUpdate->setRightInput(lastOutputCopyTokenUpdateNode);
+			lastOutputCopyTokenUpdateNode->setOutput(outputCopyTokenUpdate);
 		}
 
 		lastOutputCopyTokenUpdateNode = outputCopyTokenUpdate;		
 
-		visitedSubproblems.push_back(i->get());
+		visitedSubproblems.push_back(q->get());
                 numSubProblem++;
 	}
 
@@ -266,12 +274,17 @@ RULE_FINISHED: DOT {createTree(); delete currentProblem; currentProblem = new Pr
 
 RULE: RULE_OPERATOR TAIL;
 
-HEAD : FACT { currentProblem->setHeadCompleted();};
+HEAD : FACT {
+	currentProblem->setHeadCompleted();
+};
 
 FACT : NAME OPEN_BRACKET PARAMETER_LIST CLOSE_BRACKET {
 #ifdef DEBUG_BISON
-     printf("Name: %s\n", $1);
+	printf("Name: %s\n", $1);
 #endif
+	if(!currentProblem->getHeadCompleted()) {
+		currentProblem->setName($1);
+	}
 };
 
 PARAMETER_LIST : PARAMETER
@@ -281,15 +294,29 @@ PARAMETER: NAME {
 #ifdef DEBUG_BISON
 	 printf("Name: %s\n", $1);
 #endif
+	if(!currentProblem->getHeadCompleted()) {
+		currentProblem->appendName($1);
+                currentProblem->appendName(",");
+	}
+
 } 
 | VARIABLE {
 #ifdef DEBUG_BISON
 	printf("Variable: %s\n", $1);
 #endif
 	if(currentProblem->getHeadCompleted()) {
+#ifdef DEBUG_BISON
+		printf("Add Variable to Sub-Problem %s \n", $1);
+#endif
 		currentProblem->getCurrentSubProblem()->addVariable($1);
 	} else {
+#ifdef DEBUG_BISON
+		printf("Add Variable to Problem %s \n", $1);
+#endif
 		currentProblem->addVariable($1);
+                currentProblem->appendName($1);
+                currentProblem->appendName(",");
+		printf("Problem name: %s\n", currentProblem->getName().c_str());
 	}
 } 
 | NUMBER

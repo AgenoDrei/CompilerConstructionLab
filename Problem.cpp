@@ -18,6 +18,8 @@ void Problem::setHeadCompleted() {
 		throw std::string("Head should only be completed once.");
 	}
 	_headCompleted = true;
+	_name = _name.substr(0, _name.size() - 1); // remove last , from parameter
+	_name.append(")");
 }
 
 bool Problem::getHeadCompleted() {
@@ -39,5 +41,19 @@ std::list<std::unique_ptr<SubProblem>>::const_iterator Problem::getSubProblemSta
 
 std::list<std::unique_ptr<SubProblem>>::const_iterator Problem::getSubProblemEnd() {
 	return _subProblems.end();
+}
+
+string Problem::getName() {
+	return _name;
+}
+
+void Problem::setName(string name) {
+	_name.insert(0, "(");
+	_name.insert(0, name);
+
+}
+
+void Problem::appendName(string name) {
+	_name.append(name);
 }
 

@@ -15,7 +15,7 @@ CC = g++ -Wall -std=c++11
 # the C compiler from the y.tab.o and from the lex.yy.o
 
 cc1ab: y.tab.c lex.yy.c
-		$(CC) -g y.tab.c lex.yy.c ApplyNode.cpp ReturnNode.cpp GroundNode.cpp UpdateNode.cpp IndependenceNode.cpp CopyNode.cpp EntryNode.cpp SubProblem.cpp BaseNode.cpp Problem.cpp BaseProblem.cpp -lfl -lm -o cc1ab
+		$(CC) -g -DDEBUG_BISON y.tab.c lex.yy.c StringNode.cpp ApplyNode.cpp ReturnNode.cpp GroundNode.cpp UpdateNode.cpp IndependenceNode.cpp CopyNode.cpp EntryNode.cpp SubProblem.cpp BaseNode.cpp Problem.cpp BaseProblem.cpp -lfl -lm -o cc1ab
 
 # These dependency rules indicate that (1) lex.yy.o depends on
 # lex.yy.c and y.tab.h and (2) lex.yy.o and y.tab.o depend on calc.h.

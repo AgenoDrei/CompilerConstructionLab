@@ -39,7 +39,7 @@ std::string EntryNode::toString() {
 	if(_rightOutput) {
 		ss<<_rightOutput->getID()<<" "<<_rightOutput->getConnectedPort(this);
 	}
-	ss<<")\t\t INFO";
+	ss<<")\t\t"<<_rightInput->toString();
 	return ss.str();
 }
 
