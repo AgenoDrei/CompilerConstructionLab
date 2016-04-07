@@ -7,7 +7,6 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-#include <map>
 #include "inc/Node.h"
 #include "inc/Problem.h"
 #include "inc/SubProblem.h"
@@ -19,27 +18,6 @@ extern FILE* yyin;
 extern int yylineno;
 
 Problem* currentProblem = new Problem();
-
-std::string getNodeTypeString(NodeType type) {
-	switch(type) {
-		case ENTRY:
-			return "E";
-		case UPDATE:
-			return "U";
-		case COPY:
-			return "C";
-		case GROUND:
-			return "G";
-		case INDEPENDENCE:
-			return "I";
-		case APPLY:
-			return "A";
-		case RETURN:
-			return "R";
-		default:
-			return "WHAT THE FUCK!!!";
-	}
-}
 
 bool giIndependence(SubProblem* left, SubProblem* right) {
 	// TODO
@@ -91,24 +69,15 @@ bool iIndependence(std::list<SubProblem*> left, SubProblem* right) {
 }
 
 bool gIndependence(SubProblem* left, SubProblem* right) {
-	std::cerr<<"Doing gIndependence test!!! left:"<<left<<" right:"<<right<<std::endl;
 	std::vector<std::string> result(std::max(left->getVariableSize(), right->getVariableSize()));
 	auto it = set_intersection(left->getVariablesStart(), left->getVariablesEnd(), right->getVariablesStart(), right->getVariablesEnd(), result.begin());
 	result.resize(it - result.begin());
 
-	std::cout<<"Intersection size: "<<result.size()<<" Empty: "<<result.empty()<<std::endl;
-	for (auto i: result)
-		std::cout<<"Intersection: "<<i<<" ";
-
-	std::cout<<std::endl;
-
 	if(!result.empty()) {
-		std::cerr<<"Found gIndependence"<<std::endl;
 		return true;
 	}
 	// TODO: Helper variables
 
-	std::cerr<<"Found gDependence"<<std::endl;
         return false;
 }
 
@@ -121,95 +90,95 @@ bool gIndependence(std::list<SubProblem*> left, SubProblem* right) {
         return false;
 }
 
-
 void createTree() {
-	Node* entry = new Node(ENTRY);
+	NodeStorage storage;
 
-	std::map<int, Node*> nodes; // TODO: use smart pointer
-	nodes.insert(std::pair<int, Node*>(entry->getID(), entry));
+	auto entry = CreateAndRegisterNode<EntryNode>(storage);
 
 	std::list<SubProblem*> visitedSubproblems;
 
 	int numSubProblem = 0;
-	Node* firstSubProblemUpdate = nullptr;
-	Node* mainCopyNode = nullptr;
-	Node* lastOutputCopyTokenUpdateNode = nullptr;
+	UpdateNode* firstSubProblemUpdate = nullptr;
+	CopyNode* mainCopyNode = nullptr;
+	UpdateNode* lastOutputCopyTokenUpdateNode = nullptr;
 
 	for(auto i = currentProblem->getSubProblemStart(); i != currentProblem->getSubProblemEnd(); ++i) {
-		Node* updateSubProblem = new Node(UPDATE);
-		nodes.insert(std::pair<int, Node*>(updateSubProblem->getID(), updateSubProblem));
+		auto updateSubProblem = CreateAndRegisterNode<UpdateNode>(storage);
                 // TODO: updateSubProblem.input.right = subProblem
 
-                if(numSubProblem == 0) {
+                switch(numSubProblem) {
+		case 0: {
 			firstSubProblemUpdate = updateSubProblem;
 
-                        entry->outputs[1] = updateSubProblem->getID();
-                        updateSubProblem->inputs.left = entry->getID();
-                } else if(numSubProblem == 1) {
-			Node* copy = new Node(COPY);
-			nodes.insert(std::pair<int, Node*>(copy->getID(), copy));
+			entry->setRightOutput(updateSubProblem);
+			updateSubProblem->setLeftInput(entry);
+			break;
+			}
+                case 1: {
+			auto copy = CreateAndRegisterNode<CopyNode>(storage);
 
-			copy->inputs.left = entry->getID();
-			entry->outputs[1] = copy->getID();
+			copy->setInput(entry);
+			entry->setRightOutput(copy);
 			
-			updateSubProblem->inputs.left = copy->getID();
-			copy->outputs[0] = updateSubProblem->getID();
+			updateSubProblem->setLeftInput(copy);
+			copy->addOutput(updateSubProblem);
 
-			firstSubProblemUpdate->inputs.left = copy->getID();
-			copy->outputs[1] = firstSubProblemUpdate->getID();
-		} else {
-			Node* copy = mainCopyNode;
-			
-			updateSubProblem->inputs.left = copy->getID();
-                        copy->addOutput(updateSubProblem->getID());
+			firstSubProblemUpdate->setLeftInput(copy);
+			copy->addOutput(firstSubProblemUpdate);
+
+			mainCopyNode = copy;
+			break;
+			}
+		default: {
+			CopyNode* copy = mainCopyNode;
+		
+			updateSubProblem->setLeftInput(copy);
+			copy->addOutput(updateSubProblem);	
+			}
+			break;
 		}
 
-		Node* lastDependenceNode = updateSubProblem; // if there is no dependence the next node is the last U-Node
-
+		BaseNode* lastDependenceNode = updateSubProblem; // if there is no dependence the next node is the last U-Node
+		
 		if(giIndependence(visitedSubproblems, i->get())) {
 			// TODO
 		} else if(gIndependence(visitedSubproblems, i->get())) {
-			Node* g = new Node(GROUND);
-			nodes.insert(std::pair<int, Node*>(g->getID(), g));
+			auto g = CreateAndRegisterNode<GroundNode>(storage);
 
-			g->inputs.left = updateSubProblem->getID();
-			updateSubProblem->outputs[0] = g->getID();
+			g->setLeftInput(updateSubProblem);
+			updateSubProblem->setOutput(g);
 
 			lastDependenceNode = g;
 		} else if(iIndependence(visitedSubproblems, i->get())) {
-                        Node* iNode = new Node(INDEPENDENCE);
-                        nodes.insert(std::pair<int, Node*>(iNode->getID(), iNode));
+			auto iNode = CreateAndRegisterNode<IndependenceNode>(storage);
 
-                        iNode->inputs.left = updateSubProblem->getID();
-                        updateSubProblem->outputs[0] = iNode->getID();
+			iNode->setLeftInput(updateSubProblem);
+			updateSubProblem->setOutput(iNode);
 
 			lastDependenceNode = iNode;
 		}
 
-		Node* apply = new Node(APPLY);
-		nodes.insert(std::pair<int, Node*>(apply->getID(), apply));
+		auto apply = CreateAndRegisterNode<ApplyNode>(storage);
 
-		apply->inputs.left = lastDependenceNode->getID();
-		lastDependenceNode->outputs[0] = apply->getID();
+		apply->setInput(lastDependenceNode);
+		dynamic_cast<ILeftOutputNode*>(lastDependenceNode)->setLeftOutput(apply);
 
-		Node* copyOutputToken = new Node(COPY);
-		nodes.insert(std::pair<int, Node*>(copyOutputToken->getID(), copyOutputToken));
+		auto copyOutputToken = CreateAndRegisterNode<CopyNode>(storage);
 
-		copyOutputToken->inputs.left = apply->getID();
-		apply->outputs[0] = copyOutputToken->getID();
+		copyOutputToken->setInput(apply);
+		apply->setOutput(copyOutputToken);
 
-		Node* outputCopyTokenUpdate = new Node(UPDATE);
-		nodes.insert(std::pair<int, Node*>(outputCopyTokenUpdate->getID(), outputCopyTokenUpdate));
-
-		outputCopyTokenUpdate->inputs.left = copyOutputToken->getID();
-		copyOutputToken->addOutput(outputCopyTokenUpdate->getID());
+		auto outputCopyTokenUpdate = CreateAndRegisterNode<UpdateNode>(storage);
+		
+		outputCopyTokenUpdate->setLeftInput(copyOutputToken);
+		copyOutputToken->addOutput(outputCopyTokenUpdate);
 
 		if(numSubProblem == 0) {
-			entry->outputs[0] = outputCopyTokenUpdate->getID();
-			outputCopyTokenUpdate->inputs.right = entry->getID();
+			outputCopyTokenUpdate->setRightInput(entry);
+			entry->setLeftOutput(outputCopyTokenUpdate);
 		} else {
-			outputCopyTokenUpdate->outputs[0] = lastOutputCopyTokenUpdateNode->getID();
-			lastOutputCopyTokenUpdateNode->inputs.right = outputCopyTokenUpdate->getID();
+			lastOutputCopyTokenUpdateNode->setRightInput(outputCopyTokenUpdate);
+			outputCopyTokenUpdate->setLeftOutput(lastOutputCopyTokenUpdateNode);
 		}
 
 		lastOutputCopyTokenUpdateNode = outputCopyTokenUpdate;		
@@ -218,48 +187,19 @@ void createTree() {
                 numSubProblem++;
 	}
 
-	Node* returnNode = new Node(RETURN);
-	nodes.insert(std::pair<int, Node*>(returnNode->getID(), returnNode));
+	auto returnNode = CreateAndRegisterNode<ReturnNode>(storage);;
 	
-	returnNode->inputs.left = lastOutputCopyTokenUpdateNode->getID();
-	lastOutputCopyTokenUpdateNode->outputs[0] = returnNode->getID();
+	if(lastOutputCopyTokenUpdateNode) { // a(X, Y, Y).
+		returnNode->setInput(lastOutputCopyTokenUpdateNode);
+		lastOutputCopyTokenUpdateNode->setLeftOutput(returnNode);
+	}
 
-	std::cout<<"<Nr>\t"<<"<Typ>\t"<<"(<RNr> <RPort>)\t"<<"(<LNr> <LPort>)\t"<<"Info"<<std::endl;
-	for(auto& kv : nodes)  {
-		std::cout<<kv.first<<"\t"<<getNodeTypeString(kv.second->getType())<<"\t"<<"(";
-		if(kv.second->outputs[0] != -1) {
-			std::cout<<kv.second->outputs[0]<<" ";
-		} else {
-			std::cout<<"- ";
-		}
-		if(kv.second->outputs[0] != -1) {
-			if(nodes[kv.second->outputs[0]]->inputs.left == kv.first) {
-				std::cout<<"L";
-			} else {
-				std::cout<<"R";			
-			}
-		}else {
-			std::cout<<"-";
-		}
-		std::cout<<")\t\t"<<"(";
-		if(kv.second->outputs[1] != -1) {
-                        std::cout<<kv.second->outputs[1]<<" ";
-                } else {
-                        std::cout<<"- ";
-                }
-		if(kv.second->outputs[1] != -1) {
-			if(nodes[kv.second->outputs[1]]->inputs.left == kv.first) {
-                                std::cout<<"L";
-                        } else {
-                                std::cout<<"R";
-                        }
-		} else {
-			std::cout<<"-";
-		}
-		std::cout<<")\t\t"<<"Info"<<std::endl;
+	std::cout<<"<Nr>\t"<<"<Typ>\t"<<"(<LNr> <LPort>)\t"<<"(<RNr> <RPort>)\t"<<"Info"<<std::endl;
+	for(auto& kv : storage)  {
+		std::cout<<kv.second->toString()<<std::endl;
 	};
 
-	// TODO: Memory cleanup
+	// TODO: Memory cleanup => storage.destoryEverything();
 }
 
 %}
@@ -329,15 +269,23 @@ RULE: RULE_OPERATOR TAIL;
 HEAD : FACT { currentProblem->setHeadCompleted();};
 
 FACT : NAME OPEN_BRACKET PARAMETER_LIST CLOSE_BRACKET {
+#ifdef DEBUG_BISON
      printf("Name: %s\n", $1);
+#endif
 };
 
 PARAMETER_LIST : PARAMETER
 | PARAMETER COMMA PARAMETER_LIST;
 
-PARAMETER: NAME {printf("Name: %s\n", $1);} 
+PARAMETER: NAME {
+#ifdef DEBUG_BISON
+	 printf("Name: %s\n", $1);
+#endif
+} 
 | VARIABLE {
+#ifdef DEBUG_BISON
 	printf("Variable: %s\n", $1);
+#endif
 	if(currentProblem->getHeadCompleted()) {
 		currentProblem->getCurrentSubProblem()->addVariable($1);
 	} else {
@@ -356,7 +304,6 @@ PARAMETER: NAME {printf("Name: %s\n", $1);}
 TAIL : CHAIN; // a(X,Y), b(X,Z)
 
 START_FACT : %empty {
-	printf("Create Subproblem\n");
 	currentProblem->newSubProblem();
 };
 

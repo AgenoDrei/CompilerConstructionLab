@@ -1,34 +1,21 @@
 #pragma once
 
-#include <list>
+#include "NodeStorage.h"
 
-enum NodeType {
-	ENTRY,
-	UPDATE,
-	COPY,
-	APPLY,
-	RETURN,
-	GROUND,
-	INDEPENDENCE
-};
+#include "BaseNode.h"
+#include "ApplyNode.h"
+#include "ReturnNode.h"
+#include "UpdateNode.h"
+#include "GroundNode.h"
+#include "IndependenceNode.h"
+#include "EntryNode.h"
+#include "CopyNode.h"
 
-class Node {
-private:
-	int _id;
-	NodeType _type;
-	static int auto_id;
-public:
-	Node(NodeType type);
+template<typename T>
+T* CreateAndRegisterNode(NodeStorage& storage) {
+        T* result = new T();
+        storage.insert(std::pair<int, BaseNode*>(result->getID(), result));
+        return result;
+}
 
-	int getID();
-	NodeType getType();
-
-	struct {
-		int left = -1, right = -1;
-	} inputs;
-
-	int outputs[5];
-	int addOutput(int id);
-
-};
 

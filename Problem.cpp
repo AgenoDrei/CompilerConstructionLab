@@ -11,7 +11,6 @@ Problem::Problem() {
 }
 
 Problem::~Problem() {
-	cout<<"Problem destroyed"<<endl;
 }
 
 void Problem::setHeadCompleted() {
