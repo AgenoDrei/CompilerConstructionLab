@@ -1,4 +1,5 @@
 #include "inc/Node.h"
+#include <string>
 
 int Node::auto_id = 0;
 
@@ -17,5 +18,15 @@ int Node::getID() {
 
 NodeType Node::getType() {
 	return _type;
+}
+
+int Node::addOutput(int id) {
+	for(auto i = 0; i < 5; ++i) {
+		if(outputs[i] == -1) {
+			outputs[i] = id;
+			return i;
+		}
+	}
+	throw std::string("No more outputs");
 }
 

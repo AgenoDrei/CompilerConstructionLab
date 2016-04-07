@@ -30,6 +30,12 @@ std::string getNodeTypeString(NodeType type) {
 			return "C";
 		case GROUND:
 			return "G";
+		case INDEPENDENCE:
+			return "I";
+		case APPLY:
+			return "A";
+		case RETURN:
+			return "R";
 		default:
 			return "WHAT THE FUCK!!!";
 	}
@@ -50,8 +56,29 @@ bool giIndependence(std::list<SubProblem*> left, SubProblem* right) {
 }
 
 bool iIndependence(SubProblem* left, SubProblem* right) {
-        // TODO
-        return false;
+        std::vector<std::string> resultFirstCondition(std::max(left->getVariableSize(), right->getVariableSize()));
+	auto it = set_intersection(left->getVariablesStart(), left->getVariablesEnd(), right->getVariablesStart(), right->getVariablesEnd(), resultFirstCondition.begin()); // Mp UNION Mq = 0
+	resultFirstCondition.resize(it - resultFirstCondition.begin());
+
+	std::vector<std::string> mqNHp(right->getVariablesStart(), right->getVariablesEnd());
+	mqNHp.insert(mqNHp.end(), left->getHelperVariablesStart(), left->getHelperVariablesEnd()); // Mq UNION NHp
+
+	std::vector<std::string> resultSecondCondition(left->getVariableSize());
+	it = set_difference(left->getVariablesStart(), left->getVariablesEnd(), mqNHp.begin(), mqNHp.end(), resultSecondCondition.begin());	
+	resultSecondCondition.resize(it - resultSecondCondition.begin());
+
+        std::list<std::string> mpNHq(left->getVariablesStart(), left->getVariablesEnd());
+        mpNHq.insert(mpNHq.end(), right->getHelperVariablesStart(), right->getHelperVariablesEnd()); // Mq UNION NHp
+
+        std::vector<std::string> resultThirdCondition(right->getVariableSize());
+        it = set_difference(right->getVariablesStart(), right->getVariablesEnd(), mpNHq.begin(), mpNHq.end(), resultThirdCondition.begin());
+	resultThirdCondition.resize(it - resultThirdCondition.begin());
+
+	if(resultFirstCondition.empty() && !resultSecondCondition.empty() && !resultThirdCondition.empty()) {
+		return true;
+	}
+
+	return false;
 }
 
 bool iIndependence(std::list<SubProblem*> left, SubProblem* right) {
@@ -65,8 +92,16 @@ bool iIndependence(std::list<SubProblem*> left, SubProblem* right) {
 
 bool gIndependence(SubProblem* left, SubProblem* right) {
 	std::cerr<<"Doing gIndependence test!!! left:"<<left<<" right:"<<right<<std::endl;
-	std::vector<std::string> result(std::min(left->getVariableSize(), right->getVariableSize()));
-	set_intersection(left->getVariablesStart(), left->getVariablesEnd(), right->getVariablesStart(), right->getVariablesEnd(), result.begin());
+	std::vector<std::string> result(std::max(left->getVariableSize(), right->getVariableSize()));
+	auto it = set_intersection(left->getVariablesStart(), left->getVariablesEnd(), right->getVariablesStart(), right->getVariablesEnd(), result.begin());
+	result.resize(it - result.begin());
+
+	std::cout<<"Intersection size: "<<result.size()<<" Empty: "<<result.empty()<<std::endl;
+	for (auto i: result)
+		std::cout<<"Intersection: "<<i<<" ";
+
+	std::cout<<std::endl;
+
 	if(!result.empty()) {
 		std::cerr<<"Found gIndependence"<<std::endl;
 		return true;
@@ -97,6 +132,8 @@ void createTree() {
 
 	int numSubProblem = 0;
 	Node* firstSubProblemUpdate = nullptr;
+	Node* mainCopyNode = nullptr;
+	Node* lastOutputCopyTokenUpdateNode = nullptr;
 
 	for(auto i = currentProblem->getSubProblemStart(); i != currentProblem->getSubProblemEnd(); ++i) {
 		Node* updateSubProblem = new Node(UPDATE);
@@ -121,8 +158,13 @@ void createTree() {
 			firstSubProblemUpdate->inputs.left = copy->getID();
 			copy->outputs[1] = firstSubProblemUpdate->getID();
 		} else {
-			// TODO: MORE SUB PROBLEMS e.g better copy output handling
+			Node* copy = mainCopyNode;
+			
+			updateSubProblem->inputs.left = copy->getID();
+                        copy->addOutput(updateSubProblem->getID());
 		}
+
+		Node* lastDependenceNode = updateSubProblem; // if there is no dependence the next node is the last U-Node
 
 		if(giIndependence(visitedSubproblems, i->get())) {
 			// TODO
@@ -132,17 +174,64 @@ void createTree() {
 
 			g->inputs.left = updateSubProblem->getID();
 			updateSubProblem->outputs[0] = g->getID();
+
+			lastDependenceNode = g;
 		} else if(iIndependence(visitedSubproblems, i->get())) {
-			// TODO
+                        Node* iNode = new Node(INDEPENDENCE);
+                        nodes.insert(std::pair<int, Node*>(iNode->getID(), iNode));
+
+                        iNode->inputs.left = updateSubProblem->getID();
+                        updateSubProblem->outputs[0] = iNode->getID();
+
+			lastDependenceNode = iNode;
 		}
+
+		Node* apply = new Node(APPLY);
+		nodes.insert(std::pair<int, Node*>(apply->getID(), apply));
+
+		apply->inputs.left = lastDependenceNode->getID();
+		lastDependenceNode->outputs[0] = apply->getID();
+
+		Node* copyOutputToken = new Node(COPY);
+		nodes.insert(std::pair<int, Node*>(copyOutputToken->getID(), copyOutputToken));
+
+		copyOutputToken->inputs.left = apply->getID();
+		apply->outputs[0] = copyOutputToken->getID();
+
+		Node* outputCopyTokenUpdate = new Node(UPDATE);
+		nodes.insert(std::pair<int, Node*>(outputCopyTokenUpdate->getID(), outputCopyTokenUpdate));
+
+		outputCopyTokenUpdate->inputs.left = copyOutputToken->getID();
+		copyOutputToken->addOutput(outputCopyTokenUpdate->getID());
+
+		if(numSubProblem == 0) {
+			entry->outputs[0] = outputCopyTokenUpdate->getID();
+			outputCopyTokenUpdate->inputs.right = entry->getID();
+		} else {
+			outputCopyTokenUpdate->outputs[0] = lastOutputCopyTokenUpdateNode->getID();
+			lastOutputCopyTokenUpdateNode->inputs.right = outputCopyTokenUpdate->getID();
+		}
+
+		lastOutputCopyTokenUpdateNode = outputCopyTokenUpdate;		
 
 		visitedSubproblems.push_back(i->get());
                 numSubProblem++;
 	}
 
+	Node* returnNode = new Node(RETURN);
+	nodes.insert(std::pair<int, Node*>(returnNode->getID(), returnNode));
+	
+	returnNode->inputs.left = lastOutputCopyTokenUpdateNode->getID();
+	lastOutputCopyTokenUpdateNode->outputs[0] = returnNode->getID();
+
 	std::cout<<"<Nr>\t"<<"<Typ>\t"<<"(<RNr> <RPort>)\t"<<"(<LNr> <LPort>)\t"<<"Info"<<std::endl;
 	for(auto& kv : nodes)  {
-		std::cout<<kv.first<<"\t"<<getNodeTypeString(kv.second->getType())<<"\t"<<"("<<kv.second->outputs[0]<<" ";
+		std::cout<<kv.first<<"\t"<<getNodeTypeString(kv.second->getType())<<"\t"<<"(";
+		if(kv.second->outputs[0] != -1) {
+			std::cout<<kv.second->outputs[0]<<" ";
+		} else {
+			std::cout<<"- ";
+		}
 		if(kv.second->outputs[0] != -1) {
 			if(nodes[kv.second->outputs[0]]->inputs.left == kv.first) {
 				std::cout<<"L";
@@ -150,9 +239,14 @@ void createTree() {
 				std::cout<<"R";			
 			}
 		}else {
-			std::cout<<"-1";
+			std::cout<<"-";
 		}
-		std::cout<<")\t"<<"("<<kv.second->outputs[1]<<" ";
+		std::cout<<")\t\t"<<"(";
+		if(kv.second->outputs[1] != -1) {
+                        std::cout<<kv.second->outputs[1]<<" ";
+                } else {
+                        std::cout<<"- ";
+                }
 		if(kv.second->outputs[1] != -1) {
 			if(nodes[kv.second->outputs[1]]->inputs.left == kv.first) {
                                 std::cout<<"L";
@@ -160,10 +254,12 @@ void createTree() {
                                 std::cout<<"R";
                         }
 		} else {
-			std::cout<<"-1";
+			std::cout<<"-";
 		}
-		std::cout<<")\t"<<"Info"<<std::endl;
+		std::cout<<")\t\t"<<"Info"<<std::endl;
 	};
+
+	// TODO: Memory cleanup
 }
 
 %}

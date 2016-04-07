@@ -26,7 +26,9 @@ public:
 	struct {
 		int left = -1, right = -1;
 	} inputs;
+
 	int outputs[5];
+	int addOutput(int id);
 
 };
 
