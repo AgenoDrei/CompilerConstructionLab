@@ -44,7 +44,7 @@ std::string IndependenceNode::toString() {
 	} else {
 		ss<<"- -";
 	}
-        ss<<")\t\t";
+        ss<<")\t\t"<<_rightInput->toString();
         return ss.str();
 
 }

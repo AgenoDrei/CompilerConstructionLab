@@ -43,7 +43,7 @@ std::string GroundNode::toString() {
 	} else {
 		ss<<"- -";
 	}
-	ss<<")\t\t";
+	ss<<")\t\t"<<_rightInput->toString();
         return ss.str();
 }
 

@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 #include <vector>
 #include "inc/Node.h"
 #include "inc/Problem.h"
@@ -33,7 +34,7 @@ bool giIndependence(std::list<SubProblem*> left, SubProblem* right) {
 	return false;
 }
 
-bool iIndependence(SubProblem* left, SubProblem* right) {
+bool iIndependence(SubProblem* left, SubProblem* right, std::vector<std::string>** resultReturn) {
         std::vector<std::string> resultFirstCondition(std::max(left->getVariableSize(), right->getVariableSize()));
 	auto it = set_intersection(left->getVariablesStart(), left->getVariablesEnd(), right->getVariablesStart(), right->getVariablesEnd(), resultFirstCondition.begin()); // Mp UNION Mq = 0
 	resultFirstCondition.resize(it - resultFirstCondition.begin());
@@ -53,37 +54,44 @@ bool iIndependence(SubProblem* left, SubProblem* right) {
 	resultThirdCondition.resize(it - resultThirdCondition.begin());
 
 	if(resultFirstCondition.empty() && !resultSecondCondition.empty() && !resultThirdCondition.empty()) {
+		*resultReturn = new std::vector<std::string>();
+		(*resultReturn)->insert((*resultReturn)->begin(), resultFirstCondition.begin(), resultFirstCondition.end());
+		(*resultReturn)->insert((*resultReturn)->begin(), resultSecondCondition.begin(), resultSecondCondition.end());
+		(*resultReturn)->insert((*resultReturn)->begin(), resultThirdCondition.begin(), resultThirdCondition.end());
 		return true;
 	}
 
+	resultReturn = nullptr;
 	return false;
 }
 
-bool iIndependence(std::list<SubProblem*> left, SubProblem* right) {
+bool iIndependence(std::list<SubProblem*> left, SubProblem* right, std::vector<std::string>** resultReturn) {
         for(SubProblem* l : left) {
-                if(iIndependence(l, right)) {
+                if(iIndependence(l, right, resultReturn)) {
                         return true;
                 }
         }
         return false;
 }
 
-bool gIndependence(SubProblem* left, SubProblem* right) {
-	std::vector<std::string> result(std::max(left->getVariableSize(), right->getVariableSize()));
-	auto it = set_intersection(left->getVariablesStart(), left->getVariablesEnd(), right->getVariablesStart(), right->getVariablesEnd(), result.begin());
-	result.resize(it - result.begin());
+bool gIndependence(SubProblem* left, SubProblem* right, std::vector<std::string>** resultReturn) {
+	std::vector<std::string>* result = new std::vector<std::string>(std::max(left->getVariableSize(), right->getVariableSize()));
+	auto it = set_intersection(left->getVariablesStart(), left->getVariablesEnd(), right->getVariablesStart(), right->getVariablesEnd(), result->begin());
+	result->resize(it - result->begin());
 
-	if(!result.empty()) {
+	if(!result->empty()) {
+		*resultReturn = result;
 		return true;
 	}
 	// TODO: Helper variables
-
+	
+	*resultReturn = nullptr;
         return false;
 }
 
-bool gIndependence(std::list<SubProblem*> left, SubProblem* right) {
+bool gIndependence(std::list<SubProblem*> left, SubProblem* right, std::vector<std::string>** result) {
         for(SubProblem* l : left) {
-                if(gIndependence(l, right)) {
+                if(gIndependence(l, right, result)) {
                         return true;
                 }
         }
@@ -142,22 +150,52 @@ void createTree() {
 		//------------ 2.2
 		BaseNode* lastDependenceNode = updateSubProblem; // if there is no dependence the next node is the last U-Node
 		
+		std::vector<std::string>* result = nullptr;
+
 		if(giIndependence(visitedSubproblems, q->get())) {
 			// TODO
-		} else if(gIndependence(visitedSubproblems, q->get())) {
+		} else if(gIndependence(visitedSubproblems, q->get(), &result)) {
 			auto g = CreateAndRegisterNode<GroundNode>(storage);
 
+			std::string gNames;
+			gNames.append("[");
+			for(auto n : *result) {
+				gNames.append(n);
+				gNames.append(",");
+			}
+			if(gNames.back() == ',') {
+				gNames = gNames.substr(0, gNames.size() - 1);
+			}
+			gNames.append("]");
+
 			g->setLeftInput(updateSubProblem);
+			g->setRightInput(new StringNode(gNames));
 			updateSubProblem->setOutput(g);
 
 			lastDependenceNode = g;
-		} else if(iIndependence(visitedSubproblems, q->get())) {
+		} else if(iIndependence(visitedSubproblems, q->get(), &result)) {
 			auto i = CreateAndRegisterNode<IndependenceNode>(storage);
 
+                        std::string iNames;
+                        iNames.append("[[");
+                        for(auto n : *result) {
+                                iNames.append(n);
+                                iNames.append(",");
+                        }
+			if(iNames.back() == ',')  {
+	                        iNames = iNames.substr(0, iNames.size() - 1);
+			}
+                        iNames.append("]]");
+
+
 			i->setLeftInput(updateSubProblem);
+			i->setRightInput(new StringNode(iNames));
 			updateSubProblem->setOutput(i);
 
 			lastDependenceNode = i;
+		}
+		if(result) {
+			delete result;
 		}
 
 		//---------2.3

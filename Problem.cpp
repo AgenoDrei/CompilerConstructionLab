@@ -18,7 +18,9 @@ void Problem::setHeadCompleted() {
 		throw std::string("Head should only be completed once.");
 	}
 	_headCompleted = true;
-	_name = _name.substr(0, _name.size() - 1); // remove last , from parameter
+	if(_name.back() == ',') {
+		_name = _name.substr(0, _name.size() - 1); // remove last , from parameter
+	}
 	_name.append(")");
 }
 
