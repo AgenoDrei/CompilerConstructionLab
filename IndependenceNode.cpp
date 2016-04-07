@@ -33,11 +33,18 @@ std::string IndependenceNode::getType() {
 std::string IndependenceNode::toString() {
 	std::stringstream ss;
         ss<<BaseNode::toString();
-        if(_leftOutput)
+        if(_leftOutput) {
                 ss<<_leftOutput->getID()<<" "<<_leftOutput->getConnectedPort(this);
-        if(_rightOutput)
-                ss<<")\t\t("<<_rightOutput->getID()<<" "<<_rightOutput->getConnectedPort(this);
-        ss<<")\t\t INFO";
+	} else {
+		ss<<"- -";
+	}
+	ss<<")\t\t(";
+        if(_rightOutput) {
+                ss<<_rightOutput->getID()<<" "<<_rightOutput->getConnectedPort(this);
+	} else {
+		ss<<"- -";
+	}
+        ss<<")\t\t";
         return ss.str();
 
 }

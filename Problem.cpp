@@ -32,6 +32,9 @@ SubProblem* Problem::newSubProblem() {
 }
 
 SubProblem* Problem::getCurrentSubProblem() {
+	if(_subProblems.empty()) {
+		return nullptr;
+	}
 	return _subProblems.back().get();
 }
 
@@ -50,7 +53,6 @@ string Problem::getName() {
 void Problem::setName(string name) {
 	_name.insert(0, "(");
 	_name.insert(0, name);
-
 }
 
 void Problem::appendName(string name) {

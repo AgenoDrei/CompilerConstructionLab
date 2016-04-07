@@ -25,7 +25,7 @@ std::string ApplyNode::toString() {
 	ss<<BaseNode::toString();
 	if(_output)
 		ss<<_output->getID()<<" "<<_output->getConnectedPort(this);
-	ss<<")\t\t(- -)\t\t INFO";
+	ss<<")\t\t(- -)\t\t";
 	return ss.str();
 }
 

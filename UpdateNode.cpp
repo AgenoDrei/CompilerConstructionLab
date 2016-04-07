@@ -33,7 +33,10 @@ std::string UpdateNode::toString() {
 	ss<<BaseNode::toString();
 	if(_output)
 		ss<<_output->getID()<<" "<<_output->getConnectedPort(this);
-	ss<<")\t\t(- -) \t\t INFO";
+	ss<<")\t\t(- -) \t\t";
+	if(_rightInput->getType() == "S") {
+		ss<<_rightInput->toString();
+	}
 	return ss.str();
 }
 

@@ -16,7 +16,7 @@ std::string ReturnNode::getType() {
 
 std::string ReturnNode::toString() {
         std::stringstream ss;
-        ss<<BaseNode::toString()<<"- -)\t\t(- -)\t\t INFO";
+        ss<<BaseNode::toString()<<"- -)\t\t(- -)\t\t";
         return ss.str();
 }
 

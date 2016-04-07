@@ -105,7 +105,7 @@ void createTree() {
 
 	for(auto q = currentProblem->getSubProblemStart(); q != currentProblem->getSubProblemEnd(); ++q) {
 		auto updateSubProblem = CreateAndRegisterNode<UpdateNode>(storage);
-                // TODO: updateSubProblem.input.right = subProblem
+		updateSubProblem->setRightInput(new StringNode(q->get()->getName()));
 
                 switch(numSubProblem) {
 		case 0: {
@@ -265,12 +265,23 @@ void createTree() {
 %%
 
 S : HEAD AFTER_HEAD
-| END {if(currentProblem) { delete currentProblem; }};
+| END {
+	if(currentProblem) { 
+		delete currentProblem; 
+	}
+};
 
 AFTER_HEAD: RULE_FINISHED S
 | RULE RULE_FINISHED S;
 
-RULE_FINISHED: DOT {createTree(); delete currentProblem; currentProblem = new Problem();}
+RULE_FINISHED: DOT {
+	if(currentProblem->getCurrentSubProblem()) {
+		currentProblem->getCurrentSubProblem()->completeSubProblem();     
+	}
+	createTree(); 
+	delete currentProblem; 
+	currentProblem = new Problem();
+}
 
 RULE: RULE_OPERATOR TAIL;
 
@@ -282,7 +293,9 @@ FACT : NAME OPEN_BRACKET PARAMETER_LIST CLOSE_BRACKET {
 #ifdef DEBUG_BISON
 	printf("Name: %s\n", $1);
 #endif
-	if(!currentProblem->getHeadCompleted()) {
+	if(currentProblem->getHeadCompleted()) {
+		currentProblem->getCurrentSubProblem()->setName($1);
+	} else {
 		currentProblem->setName($1);
 	}
 };
@@ -294,10 +307,6 @@ PARAMETER: NAME {
 #ifdef DEBUG_BISON
 	 printf("Name: %s\n", $1);
 #endif
-	if(!currentProblem->getHeadCompleted()) {
-		currentProblem->appendName($1);
-                currentProblem->appendName(",");
-	}
 
 } 
 | VARIABLE {
@@ -305,18 +314,13 @@ PARAMETER: NAME {
 	printf("Variable: %s\n", $1);
 #endif
 	if(currentProblem->getHeadCompleted()) {
-#ifdef DEBUG_BISON
-		printf("Add Variable to Sub-Problem %s \n", $1);
-#endif
 		currentProblem->getCurrentSubProblem()->addVariable($1);
+		currentProblem->getCurrentSubProblem()->appendName($1);
+		currentProblem->getCurrentSubProblem()->appendName(",");
 	} else {
-#ifdef DEBUG_BISON
-		printf("Add Variable to Problem %s \n", $1);
-#endif
 		currentProblem->addVariable($1);
                 currentProblem->appendName($1);
                 currentProblem->appendName(",");
-		printf("Problem name: %s\n", currentProblem->getName().c_str());
 	}
 } 
 | NUMBER
@@ -331,6 +335,9 @@ PARAMETER: NAME {
 TAIL : CHAIN; // a(X,Y), b(X,Z)
 
 START_FACT : %empty {
+	if(currentProblem->getCurrentSubProblem()) {
+		currentProblem->getCurrentSubProblem()->completeSubProblem();
+	}
 	currentProblem->newSubProblem();
 };
 
