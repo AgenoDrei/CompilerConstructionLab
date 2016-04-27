@@ -8,7 +8,7 @@ private:
 	static int auto_id;
 
 protected:
-	BaseNode();
+	BaseNode(bool incrementID = true);
 public:
 	int getID();
 	virtual std::string getType() = 0;

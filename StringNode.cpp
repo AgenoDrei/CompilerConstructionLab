@@ -1,6 +1,7 @@
 #include "inc/StringNode.h"
 
-StringNode::StringNode(std::string content) : 
+StringNode::StringNode(std::string content) :
+	BaseNode(false), 
 	_content(content) {
 
 }

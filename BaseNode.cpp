@@ -4,8 +4,11 @@
 
 int BaseNode::auto_id = 0;
 
-BaseNode::BaseNode() : 
-	_id(auto_id++) {
+BaseNode::BaseNode(bool incrementID) : 
+	_id(auto_id) {
+	if(incrementID) {
+		auto_id++;
+	}
 }
 
 int BaseNode::getID() {

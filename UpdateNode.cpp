@@ -31,8 +31,15 @@ std::string UpdateNode::getType() {
 std::string UpdateNode::toString() {
 	std::stringstream ss;
 	ss<<BaseNode::toString();
-	if(_output)
-		ss<<_output->getID()<<" "<<_output->getConnectedPort(this);
+	if(_output) {
+		auto port = _output->getConnectedPort(this);
+		ss<<_output->getID()<<" ";
+		if(port != -1) {
+			ss<<port;
+		} else {
+			ss<<"0";
+		}
+	}
 	ss<<")\t\t(- -) \t\t";
 	if(_rightInput->getType() == "S") {
 		ss<<_rightInput->toString();
