@@ -20,7 +20,7 @@ extern int yylineno;
 
 Problem* currentProblem = new Problem();
 
-bool giIndependence(SubProblem* left, SubProblem* right, std::vector<std::string>** resultReturnG, std::vector<std::string>** resultReturnI) {
+bool giIndependence(SubProblem* left, SubProblem* right, std::vector<std::vector<std::string>*>* resultReturnG, std::vector<std::vector<std::string>*>* resultReturnI) {
 	std::vector<std::string>* resultFirstCondition = new std::vector<std::string>(std::max(left->getVariableSize(), right->getVariableSize()));
         auto it = set_intersection(left->getVariablesStart(), left->getVariablesEnd(), right->getVariablesStart(), right->getVariablesEnd(), resultFirstCondition->begin()); //Mp INTERSECTION != 0
         resultFirstCondition->resize(it - resultFirstCondition->begin());
@@ -42,24 +42,28 @@ bool giIndependence(SubProblem* left, SubProblem* right, std::vector<std::string
 	//std::cout << "1: " << resultFirstCondition->size() << " 2: " << resultSecondCondition.size() << " 3: " << resultThirdCondition.size() << std::endl;
 	//TODO Check Detection Logic!!!!!	
 	if(!resultFirstCondition->empty() && !resultSecondCondition.empty() && !resultThirdCondition.empty()) {
-	        *resultReturnG = resultFirstCondition;
-		*resultReturnI = new std::vector<std::string>();
-                (*resultReturnI)->insert((*resultReturnI)->begin(), resultSecondCondition.begin(), resultSecondCondition.end());
-                (*resultReturnI)->insert((*resultReturnI)->begin(), resultThirdCondition.begin(), resultThirdCondition.end());
+	        resultReturnG->push_back(resultFirstCondition);
+		auto tmp = new std::vector<std::string>();
+                tmp->insert(tmp->begin(), resultSecondCondition.begin(), resultSecondCondition.end());
+                tmp->insert(tmp->begin(), resultThirdCondition.begin(), resultThirdCondition.end());
+		resultReturnI->push_back(tmp);
 		return true;
 	}
-	
-	
+
 	return false;
 }
 
-bool giIndependence(std::list<SubProblem*> left, SubProblem* right, std::vector<std::string>** resultReturnG, std::vector<std::string>** resultReturnI) {
+bool giIndependence(std::list<SubProblem*> left, SubProblem* right, std::vector<std::vector<std::string>*>* resultReturnG, std::vector<std::vector<std::string>*>* resultReturnI, std::vector<int>* problemIndices) {
+	auto r = false;
+        auto i = 0;
 	for(SubProblem* l : left) {
 		if(giIndependence(l, right, resultReturnG, resultReturnI)) {
-			return true;
+			r = true;
+			problemIndices->push_back(i);
 		}
+		i++;
 	}
-	return false;
+	return r;
 }
 
 bool iIndependence(SubProblem* left, SubProblem* right, std::vector<std::vector<std::string>*>* resultReturn) {
@@ -195,41 +199,68 @@ void createTree() {
 		std::vector<int> problemIndices;
 		std::vector<std::vector<std::string>*> resultI;
 
-		/*if(giIndependence(visitedSubproblems, q->get(), &resultG, &resultI)) {
-			auto g = CreateAndRegisterNode<GroundNode>(storage);
-                        auto i = CreateAndRegisterNode<IndependenceNode>(storage);
+		if(giIndependence(visitedSubproblems, q->get(), &resultG, &resultI, &problemIndices)) {
+			auto j = 0;
+			auto it2 = resultI.begin();
+			for(auto it = resultG.begin(); it != resultG.end(); it++, it2++, j++) {
+				auto g = CreateAndRegisterNode<GroundNode>(storage);
+                        	auto i = CreateAndRegisterNode<IndependenceNode>(storage);
 
-                        std::string gNames, iNames;
-                        gNames.append("[");
-                        for(auto n : *resultG) {
-                                gNames.append(n);
-                                gNames.append(",");
-                        }
-                        if(gNames.back() == ',') {
-                                gNames = gNames.substr(0, gNames.size() - 1);
-                        }
-                        gNames.append("]");
+				auto giU = CreateAndRegisterNode<UpdateNode>(storage);
 
-			iNames.append("[[");
-                        for(auto n : *resultI) {
-                                iNames.append(n);
-                                iNames.append(",");
-                        }
-                        if(iNames.back() == ',')  {
-                                iNames = iNames.substr(0, iNames.size() - 1);
-                        }
-			iNames.append("]]");
-                        g->setLeftInput(updateSubProblem);
-                        g->setRightInput(new StringNode(gNames));
-			g->setRightOutput(i);
+                        	std::string gNames, iNames;
+                        	gNames.append("[");
+                        	//for(auto n : *resultG) {
+				for(auto it3 = (*it)->begin(); it3 != (*it)->end(); it3++) {
+                        	        gNames.append(*it3);
+                        	        gNames.append(",");
+                        	}
+                        	if(gNames.back() == ',') {
+                        	        gNames = gNames.substr(0, gNames.size() - 1);
+                        	}
+                        	gNames.append("]");
+	
+				iNames.append("[[");
+        	                //for(auto n : *resultI) {
+				for(auto it4 = (*it2)->begin(); it4 != (*it2)->end(); it4++) {
+                	                iNames.append(*it4);
+                        	        iNames.append(",");
+                        	}
+                        	if(iNames.back() == ',')  {
+                        	        iNames = iNames.substr(0, iNames.size() - 1);
+                        	}
+				iNames.append("]]");
+                        	g->setLeftInput(updateSubProblem);
+                        	g->setRightInput(new StringNode(gNames));
+				g->setRightOutput(i);
 
-			i->setLeftInput(g);
-                        i->setRightInput(new StringNode(iNames));
-                        updateSubProblem->setOutput(g);
+				giU->setRightInput(g);
+                                g->setLeftOutput(giU);
 
-			lastDependenceNode = i;
-				
-		} else*/ if(gIndependence(visitedSubproblems, q->get(), &resultG, &problemIndices)) {
+				if(!lastIndependenceUpdate) {
+					i->setLeftInput(g);
+        	                	updateSubProblem->setOutput(g);
+				}
+				i->setRightInput(new StringNode(iNames));
+
+				giU->setLeftInput(outputCopyNodes[problemIndices[j]]);
+                                outputCopyNodes[problemIndices[j]]->addOutput(giU);
+
+                                giU->setRightInput(i);
+                                i->setRightOutput(giU);
+
+                                if(lastIndependenceUpdate) { // Don't use lastDependenceNode it is initial set to the last update node for convience
+                                        dynamic_cast<ILeftOutputNode*>(lastDependenceNode)->setLeftOutput(i);
+                                        i->setLeftInput(lastDependenceNode);
+
+                                        lastIndependenceUpdate->setOutput(i);
+                                }
+
+				lastDependenceNode = i;
+				lastIndependenceUpdate = giU;
+			}
+		} else
+		if(gIndependence(visitedSubproblems, q->get(), &resultG, &problemIndices)) {
 			auto i = 0;
 			for(auto it = resultG.begin(); it != resultG.end(); it++, i++) {
 				auto g = CreateAndRegisterNode<GroundNode>(storage);
@@ -270,7 +301,8 @@ void createTree() {
 				lastDependenceNode = g;
 				lastIndependenceUpdate = gU;
 			}
-		} else if(iIndependence(visitedSubproblems, q->get(), &resultI, &problemIndices)) {
+		} else
+		if(iIndependence(visitedSubproblems, q->get(), &resultI, &problemIndices)) {
 			auto j = 0;
 			
 			for(auto it = resultI.begin(); it != resultI.end(); it++, j++) {

@@ -36,7 +36,7 @@ std::string CopyNode::toString() {
 	ss<<")\t\t";
 	if(_outputs.size() > 2) {
 		//ss<<"Overflow";
-		for(int i = 2; i < _outputs.size(); i++) {
+		for(unsigned int i = 2; i < _outputs.size(); i++) {
 			ss<<_outputs[i]->getID()<<" "<<_outputs[i]->getConnectedPort(this);
 		}
 	}

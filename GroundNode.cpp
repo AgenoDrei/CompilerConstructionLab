@@ -33,7 +33,13 @@ std::string GroundNode::toString() {
         std::stringstream ss;
         ss<<BaseNode::toString();
 	if(_leftOutput) {
-		ss<<_leftOutput->getID()<<" "<<_leftOutput->getConnectedPort(this);
+		ss<<_leftOutput->getID()<<" ";
+		auto port = _leftOutput->getConnectedPort(this);
+		if(port == -1) {
+			ss<<0;
+		} else {
+			ss<<port;
+		}
 	} else {
 		ss<<"- -";
 	}
