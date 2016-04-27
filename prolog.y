@@ -149,6 +149,8 @@ void createTree() {
 		auto updateSubProblem = CreateAndRegisterNode<UpdateNode>(storage);
 		updateSubProblem->setRightInput(new StringNode(q->get()->getName()));
 
+		lastIndependenceUpdate = nullptr;
+
                 switch(numSubProblem) {
 		case 0: {
 			firstSubProblemUpdate = updateSubProblem;
@@ -240,16 +242,25 @@ void createTree() {
 					gNames = gNames.substr(0, gNames.size() - 1);
 				}
 				gNames.append("]");
-
-				g->setLeftInput(updateSubProblem);
+				
+				if(!lastIndependenceUpdate) {
+					g->setLeftInput(updateSubProblem);
+					updateSubProblem->setOutput(g);
+				}		
 				g->setRightInput(new StringNode(gNames));
-				updateSubProblem->setOutput(g);
-		
+
 				gU->setLeftInput(outputCopyNodes[problemIndices[i]]);
 				outputCopyNodes[problemIndices[i]]->addOutput(gU);
 
 				gU->setRightInput(g);
 				g->setLeftOutput(gU);
+
+				if(lastIndependenceUpdate) { // Don't use lastDependenceNode it is initial set to the last update node for convience
+					dynamic_cast<ILeftOutputNode*>(lastDependenceNode)->setLeftOutput(g);
+					g->setLeftInput(lastDependenceNode);
+
+					lastIndependenceUpdate->setOutput(g);
+				}
 
 				lastDependenceNode = g;
 				lastIndependenceUpdate = gU;
